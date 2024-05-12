@@ -3,7 +3,7 @@ CC = g++
 CFLAGS = -c
 
 PREF_SRC = ./src/
-PREF_BUILD = ./build/
+PREF_BUILD = ./obj/
 
 SRC = $(wildcard $(PREF_SRC)*.cpp)
 OBJ = $(patsubst $(PREF_SRC)%.cpp, $(PREF_BUILD)%.o, $(SRC))
