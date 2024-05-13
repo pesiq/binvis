@@ -1,11 +1,14 @@
 #include <vector>
 #include <string>
+#include <fstream>
+#include <iostream>
 
 class Color{
-    float r, g, b;
 public:
+    unsigned char r, g, b;
+
     Color();
-    Color(float r, float g, float b);
+    Color(unsigned char r, unsigned char g, unsigned char b);
     ~Color();
 };
 
@@ -18,7 +21,6 @@ private:
 
 public:
     Image(size_t width, size_t height);
-    Image();
     ~Image();
 
     Color getColor(size_t x, size_t y);

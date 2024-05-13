@@ -1,15 +1,16 @@
-#include <fstream>
-#include <iostream>
+
 
 #include "./Image.h"
 
 #define FILE_HEADER_SIZE 12
 #define INFO_HEADER_SIZE 40
 
+
+
 /////////////////////////////////////////////////////////////////
 
 Color::Color() : r(0), g(0), b(0) {}
-Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
+Color::Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
 Color::~Color(){}
 
 /////////////////////////////////////////////////////////////////
@@ -17,17 +18,21 @@ Color::~Color(){}
 Image::Image(size_t width, size_t height)
     : width(width), height(height), data(std::vector<Color>(width * height)) {}
 
-Image::Image() : width(0), height (0), data(NULL) {}
 
 Image::~Image(){}
+
 
 Color Image::getColor(size_t x, size_t y){
     return data[y * width + x];
 }
 
+
 void Image::setColor(size_t x, size_t y, const Color &col){
-    data[y * width + x] = col;
+    data[y * width + x].b = col.b;
+    data[y * width + x].r = col.r;
+    data[y * width + x].g = col.g;
 }
+
 
 void Image::Export(const std::string path){
     std::ofstream file (path, std::ios::out | std::ios::binary);
@@ -37,12 +42,14 @@ void Image::Export(const std::string path){
         return;
     }
 
-    const int padding = (4 - (width * 3) % 4) % 4;
-    const int paddingAmount = ((width * 3) + padding) * height;
-    const int fileSize = FILE_HEADER_SIZE + INFO_HEADER_SIZE + width * height * 3 + paddingAmount;
+    unsigned char pad[3] = {0,0,0};
+    const int padding = ((4 - (width * 3) % 4) % 4);
+    //const int paddingAmount = ((width * 3) + padding) * height;
+    const int fileSize = FILE_HEADER_SIZE + INFO_HEADER_SIZE + width * height * 3 + padding * height + 2;
+    std::cout << fileSize << std::endl;
 
     char BM[2] = {'B', 'M'}; 
-    unsigned int fileHeader[FILE_HEADER_SIZE / 2];
+    unsigned int fileHeader[FILE_HEADER_SIZE / 4];
     unsigned int infoHeader[INFO_HEADER_SIZE / 4];
 
     //filling file header
@@ -59,7 +66,7 @@ void Image::Export(const std::string path){
     unsigned short planes = 1; // number of planes =1
     unsigned short bpp = 24; //bits per pixel 24 for full RGB
 
-    unsigned int concat = (planes << 16) + bpp;
+    unsigned int concat = (bpp << 16) + planes; //concatenate 2x 2bit vars 
 
     infoHeader[3] = concat;
 
@@ -75,16 +82,24 @@ void Image::Export(const std::string path){
     //headers done, now write them to file
 
     file.write(BM, 2);
-    file.write((char *)fileHeader, FILE_HEADER_SIZE);
-    file.write((char *)infoHeader, INFO_HEADER_SIZE);
+    file.write(reinterpret_cast<char *>(fileHeader), FILE_HEADER_SIZE);
+    file.write(reinterpret_cast<char *>(infoHeader), INFO_HEADER_SIZE);
+
 
     // now write actual data
     // image data is written from bottom to top
     // and colors are written as (b, r, g)
-    for(int y = height - 1; y >= 0; y--){
-        for(int x = 0; x < width; x++){
+    for(size_t y = 0; y < height; y++){
+        for(size_t x = 0; x < width; x++){
+            Color col = getColor(x, y);
+            unsigned char color[] = {col.b, col.r, col.g};
 
+            file.write(reinterpret_cast<char *>(color), 3);
         }
+        file.write(reinterpret_cast<char *>(pad), padding);
     }
 
+
+    file.close();
+    std::cout << "Image created" << std::endl;
 }

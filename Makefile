@@ -1,6 +1,6 @@
 TARGET = binVis
 CC = g++
-CFLAGS = -c
+CFLAGS = -c -Wall
 
 PREF_SRC = ./src/
 PREF_BUILD = ./obj/

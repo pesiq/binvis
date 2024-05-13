@@ -1,9 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <iomanip>
-
 #include "./Image.h"
 
 
@@ -27,9 +21,19 @@ int main (int argc, char *argv[]) {
 
     std::string filePath = argv[1];
 
-    Image pic;
+    const size_t width = 2000;
+    const size_t height = 2000;
+    Image pic(width, height);
+
+    for(int x = 0; x < width; x++){
+        for(int y = 0; y < height; y++){
+            pic.setColor(x, y, Color(x, y, x+y));
+        }
+    }
 
     pic.Export(filePath);
+
+    
 
     return 0;
 }
