@@ -13,6 +13,11 @@ std::vector<std::byte> &readFile(std::string path){
 
 int main (int argc, char *argv[]) {
 
+    if (argc < 2){
+        std::cout << "no args" << std::endl;
+        return 0;
+    }
+
     for (int i = 0; i < argc; i++){
         std::cout << argv[i] << std::endl;
     }
@@ -25,14 +30,14 @@ int main (int argc, char *argv[]) {
     const size_t height = 2000;
     Image pic(width, height);
 
-    for(int x = 0; x < width; x++){
-        for(int y = 0; y < height; y++){
+    for(size_t x = 0; x < width; x++){
+        for(size_t y = 0; y < height; y++){
             pic.setColor(x, y, Color(x, y, x+y));
         }
     }
 
     pic.Export(filePath);
-
+    pic.Dump("Dump.bmp");
     
 
     return 0;

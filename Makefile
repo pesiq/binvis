@@ -1,4 +1,4 @@
-TARGET = binVis
+TARGET = elfscanner
 CC = g++
 CFLAGS = -c -Wall
 

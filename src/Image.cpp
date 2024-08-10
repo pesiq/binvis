@@ -18,6 +18,8 @@ Color::~Color(){}
 Image::Image(size_t width, size_t height)
     : width(width), height(height), data(std::vector<Color>(width * height)) {}
 
+Image::Image(size_t width, size_t height, std::vector<Color> &data) 
+    :width(width), height(height), data(data) {}
 
 Image::~Image(){}
 
@@ -33,16 +35,16 @@ void Image::setColor(size_t x, size_t y, const Color &col){
     data[y * width + x].g = col.g;
 }
 
+union arg
+{
+    unsigned short a[2];
+    unsigned int both;
+};
 
-void Image::Export(const std::string path){
-    std::ofstream file (path, std::ios::out | std::ios::binary);
 
-    if(!file.is_open()){
-        std::cout << "Unable to open file" << std::endl;
-        return;
-    }
+void Image::fillHeaders(std::ofstream &file){
 
-    unsigned char pad[3] = {0,0,0};
+
     const int padding = ((4 - (width * 3) % 4) % 4);
     //const int paddingAmount = ((width * 3) + padding) * height;
     const int fileSize = FILE_HEADER_SIZE + INFO_HEADER_SIZE + width * height * 3 + padding * height + 2;
@@ -63,12 +65,18 @@ void Image::Export(const std::string path){
     infoHeader[1] = width;
     infoHeader[2] = height;
 
-    unsigned short planes = 1; // number of planes =1
-    unsigned short bpp = 24; //bits per pixel 24 for full RGB
+    // unsigned short planes = 1; // number of planes =1
+    // unsigned short bpp = 24; //bits per pixel 24 for full RGB
 
-    unsigned int concat = (bpp << 16) + planes; //concatenate 2x 2bit vars 
+    // unsigned int concat = (bpp << 16) + planes; //concatenate 2x 2bit vars 
 
-    infoHeader[3] = concat;
+    // infoHeader[3] = concat;
+
+    arg tmp;
+    tmp.a[0] = 1;
+    tmp.a[1] = 24;
+
+    infoHeader[3] = tmp.both;
 
     infoHeader[4] = 0; //compression; 0 = no compression
     infoHeader[5] = 0; //ImageSize; 0 if no compression
@@ -82,8 +90,23 @@ void Image::Export(const std::string path){
     //headers done, now write them to file
 
     file.write(BM, 2);
-    file.write(reinterpret_cast<char *>(fileHeader), FILE_HEADER_SIZE);
-    file.write(reinterpret_cast<char *>(infoHeader), INFO_HEADER_SIZE);
+    file.write((char *)(fileHeader), FILE_HEADER_SIZE);
+    file.write((char *)(infoHeader), INFO_HEADER_SIZE);
+}
+
+
+void Image::Export(const std::string path){
+    std::ofstream file (path, std::ios::out | std::ios::binary);
+
+    if(!file.is_open()){
+        std::cout << "Unable to open file" << std::endl;
+        return;
+    }
+
+    fillHeaders(file);
+
+    unsigned char pad[3] = {0,0,0};
+    const int padding = ((4 - (width * 3) % 4) % 4);
 
 
     // now write actual data
@@ -92,11 +115,39 @@ void Image::Export(const std::string path){
     for(size_t y = 0; y < height; y++){
         for(size_t x = 0; x < width; x++){
             Color col = getColor(x, y);
-            unsigned char color[] = {col.b, col.r, col.g};
-
-            file.write(reinterpret_cast<char *>(color), 3);
+            file << col.b << col.r << col.g;
         }
-        file.write(reinterpret_cast<char *>(pad), padding);
+        file.write((char *)(pad), padding);
+    }
+
+
+    file.close();
+    std::cout << "Image created" << std::endl;
+}
+
+
+void Image::Dump(const std::string path){
+    std::ofstream file (path, std::ios::out | std::ios::binary);
+
+    if(!file.is_open()){
+        std::cout << "Unable to open file" << std::endl;
+        return;
+    }
+
+    fillHeaders(file);
+
+    // unsigned char pad[3] = {0,0,0};
+    // const int padding = ((4 - (width * 3) % 4) % 4);
+
+    // now write actual data
+    // image data is written from bottom to top
+    // and colors are written as (b, r, g)
+
+    // Color* dump = data.data();
+    // unsigned char[data.size()];
+    // // char* dump = data.data(); 
+    for(size_t i = 0; i < height+data.size(); i++){
+        file << data[i].b << data[i].r << data[i].b;
     }
 
 
